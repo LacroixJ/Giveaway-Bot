@@ -1,0 +1,4 @@
+*.swo
+*.swp
+details.py
+__pychache__
