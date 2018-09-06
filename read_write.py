@@ -144,7 +144,7 @@ def store_giveaway(giveaway):
                 insertbool = 0
 
         if insertbool == 1:
-            sql = "INSERT INTO entrants (giveaway_id, winner_id) VALUES (%s, %s)"
+            sql = "INSERT INTO entrants (giveaway_id, entrant_id) VALUES (%s, %s)"
             values = (giveaway.get_id(), x)
             cursor.execute(sql, values)
             database.commit()

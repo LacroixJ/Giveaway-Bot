@@ -195,12 +195,23 @@ async def archive_giveaway(message):
     msg = "giveaway " + giveaway.get_id() + " has been archived"
     await client.send_message(message.channel, msg)
 
-async def add_entrant(message):
-    giveaway_id = (message.content.split(sep = " "))[1]
+async def add_entrant(user, message):
+    giveaway_id = []
+    content = message.content
+    for x in range(30):
+        if (content[x] == '#' and content[x+4] == '|'):
+            giveaway_id = content[x+1] + content[x+2]
     giveaway = retrieve_giveaway(giveaway_id)
-    entrant_id = "123456789" #temp string while I figure out implementation
+    entrant_id = user.id
     giveaway.entrants.append(entrant_id)
     store_giveaway(giveaway)
+    return
+
+@client.event
+async def on_reaction_add(reaction,user):
+    message = reaction.message
+    await add_entrant(user,message)
+    print("reaction detected")
     return
 @client.event
 async def on_message(message):
