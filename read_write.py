@@ -100,54 +100,80 @@ def store_giveaway(giveaway):
     else:
         raise ValueError('Error storing giveaway to mysql')
 
+#    sql = "SELECT * FROM winners WHERE giveaway_id=%s"
+#    cursor.execute(sql,(giveaway.get_id(), ))
+#    winners = cursor.fetchall()
+#
+#    sql = "SELECT * FROM losers WHERE giveaway_id=%s"
+#    cursor.execute(sql,(giveaway.get_id(), ))
+#    losers = cursor.fetchall()
+#
+#    sql = "SELECT * FROM entrants WHERE giveaway_id=%s"
+#    cursor.execute(sql,(giveaway.get_id(), ))
+#    entrants = cursor.fetchall()
 
-    sql = "SELECT * FROM winners WHERE giveaway_id=%s"
-    cursor.execute(sql,(giveaway.get_id(), ))
-    winners = cursor.fetchall()
-
-    sql = "SELECT * FROM losers WHERE giveaway_id=%s"
-    cursor.execute(sql,(giveaway.get_id(), ))
-    losers = cursor.fetchall()
-
-    sql = "SELECT * FROM entrants WHERE giveaway_id=%s"
-    cursor.execute(sql,(giveaway.get_id(), ))
-    entrants = cursor.fetchall()
-
+    insertbool = 0
     for x in giveaway.get_winners():
         insertbool = 1
+        if type(x) != str:
+            x = x[0]
+            #print (x)
+        sql = "SELECT winner_id FROM winners"
+        cursor.execute(sql)
+        entrants = cursor.fetchall()
         for w in winners:
-            if x == w[1]:
-                insertbool = 0
+            if w[0] == x:
+                insertbool = 0 
+                break
+        if not insertbool:
+            break
+    if insertbool:
+        sql = "INSERT INTO winners (giveaway_id, winner_id) VALUES (%s, %s)"
+        values = (giveaway.get_id(), x)
+        cursor.execute(sql, values)
+        database.commit()
 
-        if insertbool == 1:
-            sql = "INSERT INTO winners (giveaway_id, winner_id) VALUES (%s, %s)"
-            values = (giveaway.get_id(), x)
-            cursor.execute(sql, values)
-            database.commit()
-
+    insertbool = 0
     for x in giveaway.get_losers():
         insertbool = 1
+        if type(x) != str:
+            x = x[0]
+           # print (x)
+        sql = "SELECT loser_id FROM losers"
+        cursor.execute(sql)
+        losers = cursor.fetchall()
         for l in losers:
-            if x == l[1]:
-                insertbool = 0
+            if l[0] == x:
+                insertbool = 0 
+                break
+        if not insertbool:
+            break
+    if insertbool:
+        sql = "INSERT INTO losers (giveaway_id, loser_id) VALUES (%s, %s)"
+        values = (giveaway.get_id(), x)
+        cursor.execute(sql, values)
+        database.commit()
 
-        if insertbool == 1:
-            sql = "INSERT INTO losers (giveaway_id, loser_id) VALUES (%s, %s)"
-            values = (giveaway.get_id(), x)
-            cursor.execute(sql, values)
-            database.commit()
-
+    insertbool = 0
     for x in giveaway.get_entrants():
         insertbool = 1
+        if type(x) != str:
+            x = x[0]
+           # print (x)
+        sql = "SELECT entrant_id FROM entrants"
+        cursor.execute(sql)
+        entrants = cursor.fetchall()
         for e in entrants:
-            if x == e[1]:
-                insertbool = 0
-
-        if insertbool == 1:
-            sql = "INSERT INTO entrants (giveaway_id, entrant_id) VALUES (%s, %s)"
-            values = (giveaway.get_id(), x)
-            cursor.execute(sql, values)
-            database.commit()
+            if e[0] == x:
+                insertbool = 0 
+                break
+        if not insertbool:
+            break
+    if insertbool:
+        sql = "INSERT INTO entrants (giveaway_id, entrant_id) VALUES (%s, %s)"
+        values = (giveaway.get_id(), x)
+        cursor.execute(sql, values)
+        database.commit()
 
 
     return

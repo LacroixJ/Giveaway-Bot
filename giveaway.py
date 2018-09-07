@@ -98,7 +98,15 @@ class giveaway:
     def get_losers(self):
         return self.losers
     def get_entrants(self):
-        return self.entrants
+        entrant_tuple = ()
+        for x in self.entrants:
+            entrant_tuple = entrant_tuple + (x,) 
+        return entrant_tuple
+
+    def add_entrant(self,entrant_id):
+        self.entrants.append(entrant_id)
+        return
+
     def set_entrants(self, tuple_of_entrants):
         self.entrants = tuple_of_entrants
         return
