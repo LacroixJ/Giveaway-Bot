@@ -180,7 +180,7 @@ def retrieve_giveaway(giveaway_number):
     new_giveaway.set_status(details[9])
 
 
-    sql = "SELECT winner_id FROM winners WHERE giveaway_id=$s"
+    sql = "SELECT winner_id FROM winners WHERE giveaway_id=%s"
     sql_2 = (str(giveaway_number), )
     try:
         cursor.execute(sql,sql_2)
@@ -190,7 +190,7 @@ def retrieve_giveaway(giveaway_number):
         winners = []
     new_giveaway.set_winners(winners)
 
-    sql = "SELECT loser_id FROM losers WHERE giveaway_id=$s"
+    sql = "SELECT loser_id FROM losers WHERE giveaway_id=%s"
     sql_2 = (str(giveaway_number), )
     try:
         cursor.execute(sql,sql_2)
@@ -200,7 +200,7 @@ def retrieve_giveaway(giveaway_number):
         losers  = []
     new_giveaway.set_losers(losers)
 
-    sql = "SELECT entrant_id FROM entrants WHERE giveaway_id=$s"
+    sql = "SELECT entrant_id FROM entrants WHERE giveaway_id=%s"
     sql_2 = (str(giveaway_number), )
     try:
         cursor.execute(sql,sql_2)

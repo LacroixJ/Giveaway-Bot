@@ -115,7 +115,7 @@ async def preview_giveaway(message):
     line1 = line1_1 + line1_2
     line2 = giveaway.get_description() + "\n"
     line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
-
+    line4 = "Number of entrants: **" + str(len(giveaway.entrants))+"** \n"
     if len(winning_users) == 0:
         line3 = line3 + " Not Drawn \n"
     else:
@@ -126,7 +126,7 @@ async def preview_giveaway(message):
     em = discord.Embed()
     image=(giveaway.get_image())
     em.set_image(url=image)
-    msg = line1 + line2 + line3
+    msg = line1 + line2 + line4 + line3
 
 
     await client.send_message(message.channel,content=msg,embed=em)
