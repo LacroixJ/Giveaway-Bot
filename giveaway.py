@@ -69,12 +69,15 @@ class giveaway:
         self.entrants = []
         self.status = "active"
         self.number_of_winners = "1"
+        self.replace_winners = 0
         #constructor
         return
     def draw_winners(self, winnercount):
         x = 0
         entrants = self.entrants
         self.winners = []
+        if int(winnercount) > len(entrants):
+            winnercount = len(entrants)
         while (x<int(winnercount)):
             self.winners = [secrets.choice(entrants)] + self.winners
             x += 1

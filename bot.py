@@ -35,6 +35,7 @@ async def draw_winners(message):
         client.send_message(message.channel, "Invalid ID")
         return
     giveaway.set_winners(giveaway.draw_winners(giveaway.get_number_of_winners()))
+    giveaway.replace_winners = 1
     store_giveaway(giveaway)
 
     msg = "Winners have been picked randomly for giveaway '" + giveaway.get_id() + "'"
@@ -198,14 +199,16 @@ async def archive_giveaway(message):
     await client.send_message(message.channel, msg)
 
 async def add_entrant(user, message):
-    giveaway_id = []
+    giveaway_id = "-1"
     content = message.content
-    for x in range(30):
-        if (content[x] == '#' and content[x+4] == '|'):
+    for x in range(10, 16):#area where we identify the giveaway id.
+        if (content[x] == '#' and content[x+3] == '|'):
             giveaway_id = content[x+1] + content[x+2]
     giveaway = retrieve_giveaway(giveaway_id)
     entrant_id = user.id
-    giveaway.entrants.append(entrant_id)
+    giveaway.add_entrant(entrant_id)
+    print(giveaway_id)
+    print(giveaway.entrants)
     store_giveaway(giveaway)
     return
 
@@ -215,6 +218,15 @@ async def on_reaction_add(reaction,user):
     await add_entrant(user,message)
     print("reaction detected")
     return
+
+#@client.event
+#async def on_raw_reaction_add(payload):
+#    message = await client.get_message(payload.message_id)
+#    user = client.get_user_info(payload.user_id)
+#    await add_entrant(user,message)
+#    print("reaction detected")
+#    return
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
