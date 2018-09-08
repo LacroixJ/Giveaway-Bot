@@ -71,11 +71,11 @@ class giveaway:
         self.number_of_winners = "1"
         #constructor
         return
-    def draw_winners(winnercount):
-        x = 1
+    def draw_winners(self, winnercount):
+        x = 0
         entrants = self.entrants
         self.winners = []
-        while (x<winnercount):
+        while (x<int(winnercount)):
             self.winners = [secrets.choice(entrants)] + self.winners
             x += 1
             for i in entrants: #to stop people from wining the same giveaway twice

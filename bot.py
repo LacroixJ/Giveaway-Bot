@@ -34,7 +34,7 @@ async def draw_winners(message):
     if giveaway == "NA":
         client.send_message(message.channel, "Invalid ID")
         return
-    giveaway.draw_winners(giveaway.get_number_of_winners())
+    giveaway.set_winners(giveaway.draw_winners(giveaway.get_number_of_winners()))
     store_giveaway(giveaway)
 
     msg = "Winners have been picked randomly for giveaway '" + giveaway.get_id() + "'"
@@ -108,7 +108,7 @@ async def preview_giveaway(message):
         return
     winning_users = []
     for x in giveaway.get_winners():
-        winning_users.append(client.get_user_info(x).mention())
+        winning_users.append(x)
 
     line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** start-"+giveaway.timeframe.start)
     line1_2 = str(" end-"+ giveaway.timeframe.end +" --"+giveaway.get_status()+"--"+" **| "+ giveaway.get_header()+"**\n")
@@ -120,8 +120,10 @@ async def preview_giveaway(message):
         line3 = line3 + " Not Drawn \n"
     else:
         for i in winning_users:
-            line3 = line3 + i + " "
-        line3 = line3 + "**|** Congradulations! Winners will recieve a DM \n"
+            user = await client.get_user_info(i[0])
+            userstring = user.mention
+            line3 = line3 + userstring + " "
+        line3 = line3 + "**|** Congratulations! Winners will recieve a DM \n"
 
     em = discord.Embed()
     image=(giveaway.get_image())

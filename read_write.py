@@ -99,28 +99,16 @@ def store_giveaway(giveaway):
 
     else:
         raise ValueError('Error storing giveaway to mysql')
-
-#    sql = "SELECT * FROM winners WHERE giveaway_id=%s"
-#    cursor.execute(sql,(giveaway.get_id(), ))
-#    winners = cursor.fetchall()
-#
-#    sql = "SELECT * FROM losers WHERE giveaway_id=%s"
-#    cursor.execute(sql,(giveaway.get_id(), ))
-#    losers = cursor.fetchall()
-#
-#    sql = "SELECT * FROM entrants WHERE giveaway_id=%s"
-#    cursor.execute(sql,(giveaway.get_id(), ))
-#    entrants = cursor.fetchall()
-
     insertbool = 0
     for x in giveaway.get_winners():
         insertbool = 1
         if type(x) != str:
             x = x[0]
-            #print (x)
+            print (x+ " Is a winner")
+        print (x+ " Is a winner")
         sql = "SELECT winner_id FROM winners"
         cursor.execute(sql)
-        entrants = cursor.fetchall()
+        winners = cursor.fetchall()
         for w in winners:
             if w[0] == x:
                 insertbool = 0 
@@ -132,7 +120,7 @@ def store_giveaway(giveaway):
         values = (giveaway.get_id(), x)
         cursor.execute(sql, values)
         database.commit()
-
+        print("inserted into winners " + x) 
     insertbool = 0
     for x in giveaway.get_losers():
         insertbool = 1
