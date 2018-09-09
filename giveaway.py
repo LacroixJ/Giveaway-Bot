@@ -63,7 +63,7 @@ class giveaway:
         self.description = "default description"
         self.image = "https://cdn-images-1.medium.com/max/800/1*TTOJz35-lJmjWGj59786GA.png"#default pulled right from discord site
         self.number_of_winners = "1"
-        self.timeframe = Timeframe("xxx","xxx","xxx","xxx")
+        self.timeframe = Timeframe("2000/01/01","3000/01/01","12:00","12:00")
         self.winners = []
         self.losers = []
         self.entrants = []

@@ -31,7 +31,9 @@ client = discord.Client()
 
 
 def timer_done():
-    completed_giveaway = retrieve_giveaway(read_write.check_recent()) 
+    completed_giveaway = retrieve_giveaway(read_write.check_recent())
+    if completed_giveaway == "NA":
+        return
     print("giveaway "+ completed_giveaway.get_id() +"is closest to current time")
     giveaway_done(completed_giveaway)
     return 
@@ -59,8 +61,6 @@ def giveaway_done(giveaway):
 
 
 
-timer = start_timer([2018,9,9,21,11,0])
-timer.start()
 
 
 print("Discord Version: " + discord.__version__)
@@ -176,7 +176,13 @@ async def preview_giveaway(message):
 async def create_giveaway(message):
     new_giveaway = giveaway(message)
     msg = str('Giveaway ID: ' + new_giveaway.get_id())
-
+    current_date = datetime.datetime.utcnow()
+    formatstring = str(current_date.year) +"/"+str(current_date.month)+"/"+str(current_date.day)
+    formatstring1 = str(current_date.hour)+":"+str(current_date.minute)
+    print(formatstring)
+    print(formatstring1)
+    new_giveaway.timeframe.start = formatstring
+    new_giveaway.timeframe.starttime = formatstring1
     store_giveaway(new_giveaway)
 
     await client.send_message(message.channel,msg)
@@ -232,13 +238,28 @@ async def set_date(message):
     if giveaway == "NA":
         await client.send_message(message.channel, "Invalid ID!")
         return
-            #should be yyyy/mm/dd
+    #should be yyyy/mm/dd hh:mm
     try:
         giveaway.timeframe.end = str(content[3])
         giveaway.timeframe.endtime = str(content[4])
     except:
         await client.send_message(message.channel, "Invalid formatting! Should be yyyy/mm/dd hh:mm")
         return
+    date = giveaway.timeframe.end.split(sep = "/")
+    
+    year = date[0]
+    month = date[1]
+    day = date[2]
+    
+    time = giveaway.timeframe.endtime.split(sep = ":")
+
+    hour = time[0]
+    minute = time[1]
+    
+    print(year +" " + month + " " + day + " " + hour + " " +minute)
+    timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
+    timer.start()
+
     store_giveaway(giveaway)
     await client.send_message(message.channel, "Giveaway **#"+giveaway.get_id()+"** will end on "+ giveaway.timeframe.end+ " at "+ giveaway.timeframe.endtime)
     return
@@ -256,9 +277,11 @@ async def archive_giveaway(message):
 async def add_entrant(user, message):
     giveaway_id = "-1"
     content = message.content
-    for x in range(10, 16):#area where we identify the giveaway id.
-        if (content[x] == '#' and content[x+3] == '|'):
+    for x in range(11, 15):#area where we identify the giveaway id.
+        print (content[x])
+        if ((content[x] == '#' and content[x+4] == '|') or (content[x] == '#' and content[x+3] == '|')):
             giveaway_id = content[x+1] + content[x+2]
+    print("retrived it: "+giveaway_id)
     giveaway = retrieve_giveaway(giveaway_id)
     entrant_id = user.id
     giveaway.add_entrant(entrant_id)
