@@ -24,20 +24,14 @@ def check_recent():
     for x in giveaway_list:
         if len(x[6].split(sep = "/")) >=3 and len(x[8].split(sep = ":")) >= 2:
             year = x[6].split(sep = "/")[0]
-            print(year)
             month = x[6].split(sep ="/")[1]
-            print(month)
             day = x[6].split(sep = "/")[2]
-            print(day)
             hour = x[8].split(sep = ":")[0]
-            print(hour)
             minute = x[8].split(sep = ":")[1]
-            print(minute)
             date = datetime.datetime(int(year),int(month),int(day),int(hour),int(minute),0)
             if (biggest_date - date).total_seconds() < 0 and (date-datetime.datetime.utcnow()).total_seconds() <= 0:
                 biggest_date = date
                 giveaway_id = x[0]
-                print(giveaway_id)
     return giveaway_id
 
 
@@ -188,9 +182,7 @@ def store_giveaway(giveaway):
         print(x)
         if type(x) != str:
             x = x[0]
-            print (x)
         sql = "SELECT entrant_id FROM entrants WHERE giveaway_id=%s"
-        print(x + " Final x Value")
         cursor.execute(sql,(giveaway.get_id(), ))
         entrants = cursor.fetchall()
         if len(entrants) != 0:

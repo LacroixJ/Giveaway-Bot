@@ -33,7 +33,8 @@ client = discord.Client()
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent()) 
     print("giveaway "+ completed_giveaway.get_id() +"is closest to current time")
-    return
+    giveaway_done(completed_giveaway)
+    return 
 
 #expiration array should be [<year>, <month>, <day>, <hour=?>,<minute=?>,<second=0>]
 def start_timer(expiration_array):
@@ -47,9 +48,18 @@ def start_timer(expiration_array):
 
 
     return Timer(int(expiration_in_seconds), timer_done)
-    
 
-timer = start_timer([2018,9,9,4,11,0])
+def giveaway_done(giveaway):
+    giveaway.set_status("archived")
+    giveaway.draw_winners(giveaway.get_number_of_winners())
+    store_giveaway(giveaway)
+    print("giveaway" + giveaway.get_id() + " complete")
+    return
+
+
+
+
+timer = start_timer([2018,9,9,21,11,0])
 timer.start()
 
 
@@ -62,7 +72,7 @@ async def redraw_winners(message):
     if giveaway == "NA":
         client.send_message(message.channel, "Invalid ID")
         return
-    giveaway.set_winners(giveaway.draw_winners(giveaway.get_number_of_winners()))
+    giveaway.draw_winners(giveaway.get_number_of_winners())
     giveaway.replace_winners = 1
     store_giveaway(giveaway)
 
