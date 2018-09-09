@@ -4,9 +4,12 @@ import discord
 import asyncio
 import time
 import mysql.connector
+from threading import Timer
 from giveaway import giveaway
 import details
 import read_write
+import datetime
+
 
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
@@ -25,10 +28,35 @@ retrieve_giveaway = read_write.retrieve_giveaway
 TOKEN = details.token
 client = discord.Client()
 
+
+
+def timer_done():
+    completed_giveaway = retrieve_giveaway(read_write.check_recent()) 
+    print("giveaway "+ completed_giveaway.get_id() +"is closest to current time")
+    return
+
+#expiration array should be [<year>, <month>, <day>, <hour=?>,<minute=?>,<second=0>]
+def start_timer(expiration_array):
+    expiry_date = datetime.datetime(expiration_array[0], expiration_array[1], expiration_array[2], expiration_array[3], expiration_array[4], expiration_array[5])
+    present_date = datetime.datetime.utcnow()
+
+    difference = expiry_date - present_date 
+    print(difference)
+    expiration_in_seconds = difference.total_seconds()
+    print(expiration_in_seconds)
+
+
+    return Timer(int(expiration_in_seconds), timer_done)
+    
+
+timer = start_timer([2018,9,9,4,11,0])
+timer.start()
+
+
 print("Discord Version: " + discord.__version__)
 #           function takes giveaway id and returns a corresponding giveaway object if it exists
 #call this when the giveaway ends, or to redraw. sending message to winners will be in seperate function
-async def draw_winners(message):
+async def redraw_winners(message):
     text = message.content.split(sep = " ")
     giveaway = retrieve_giveaway(text[1])
     if giveaway == "NA":
@@ -59,7 +87,7 @@ async def switchME(message):
         command = x.split(sep = " ")
 
         dictionary = {
-                "redraw":draw_winners,
+                "redraw":redraw_winners,
                 "preview":preview_giveaway,
                 "archive":archive_giveaway,
                 "delete":delete_giveaway,
@@ -68,7 +96,8 @@ async def switchME(message):
                 "image":set_image,
                 "winners":set_winners,
                 "add":create_giveaway,
-                "list":list_giveaways}
+                "list":list_giveaways,
+                "date":set_date}
 
         if dictionary.get(command[1]) != None:
             await dictionary.get(command[1])(message)
@@ -185,8 +214,24 @@ async def set_winners(message):
     giveaway.set_number_of_winners(text[3])
     store_giveaway(giveaway)
     msg =  ("There are now "+ giveaway.get_number_of_winners() +" Winners for giveway '" + giveaway.get_id()+"'" )
-    await client.send_message(message.channel,msg)  
+    await client.send_message(message.channel,msg) 
 
+async def set_date(message):
+    content = message.content.split(sep = " ")
+    giveaway = retrieve_giveaway(content[1])
+    if giveaway == "NA":
+        await client.send_message(message.channel, "Invalid ID!")
+        return
+            #should be yyyy/mm/dd
+    try:
+        giveaway.timeframe.end = str(content[3])
+        giveaway.timeframe.endtime = str(content[4])
+    except:
+        await client.send_message(message.channel, "Invalid formatting! Should be yyyy/mm/dd hh:mm")
+        return
+    store_giveaway(giveaway)
+    await client.send_message(message.channel, "Giveaway **#"+giveaway.get_id()+"** will end on "+ giveaway.timeframe.end+ " at "+ giveaway.timeframe.endtime)
+    return
 async def archive_giveaway(message):
     text = message.content.split(sep = " ")
     giveaway = retrieve_giveaway(text[1])
