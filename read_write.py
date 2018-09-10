@@ -29,7 +29,7 @@ def check_recent():
             hour = x[8].split(sep = ":")[0]
             minute = x[8].split(sep = ":")[1]
             date = datetime.datetime(int(year),int(month),int(day),int(hour),int(minute),0)
-            print (str(date)+x[0])
+            print (str(date)+" giveaway_id: " + x[0])
             if (biggest_date - date).total_seconds() < 0 and (date-datetime.datetime.utcnow()).total_seconds() <= 10:
                 biggest_date = date
                 giveaway_id = x[0]
@@ -85,32 +85,7 @@ def store_giveaway(giveaway):
         cursor.execute("SELECT giveaway_id FROM giveaways")
     except Exception as e:
         print(e)
-    #pad with zeroes to its yyyy/mm/dd and hh:mm
-#    date = giveaway.timeframe.end.split(sep = "/")
-#    for x in date:
-#        print(x+ "date")
-#    date = date[0].rjust(4,'0')
-#    date1 =  date[1].rjust(2,'0')
-#    date2 = date[2].rjust(2,'0')
-#    print(str(date)+"/"+str(date1)+"/"+str(date2))
 
-#    date = giveaway.timeframe.start.split(sep = "/")
-#    date = date[0].zfill(4)
-#    date1 =  date[1].zfill(2)
-#    date2 = date[2].zfill(2)
-#    print(str(date)+"/"+str(date1)+"/"+str(date2))
-
-
-#    date = giveaway.timeframe.endtime.split(sep = ":")
-#    date = date[0].zfill(2)
-#    date1 =  date[1].zfill(2)
-#    giveaway.timeframe.endtime = str(date)+":"+str(date1)
-#
-#    date = giveaway.timeframe.starttime.split(sep = ":")
-#    date = date[0].zfill(2)
-#    date1 =  date[1].zfill(2)
-#    giveaway.timeframe.starttime = str(date)+":"+str(date1)
-#
     ids = cursor.fetchall()
     mode_update = 0
     for x in ids:
@@ -205,7 +180,7 @@ def store_giveaway(giveaway):
     insertbool = 0
     for x in giveaway.get_entrants():
         insertbool = 1
-        print(x)
+        #print(x)
         if type(x) != str:
             x = x[0]
         sql = "SELECT entrant_id FROM entrants WHERE giveaway_id=%s"
@@ -222,7 +197,7 @@ def store_giveaway(giveaway):
         sql = "INSERT INTO entrants (giveaway_id, entrant_id) VALUES (%s, %s)"
         values = (giveaway.get_id(), x)
         cursor.execute(sql, values)
-        print("inserted "+x+"into entrants")
+        print("inserted "+x+" into entrants for giveaway "+ giveaway.get_id())
         database.commit()
 
 

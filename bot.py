@@ -33,21 +33,24 @@ client = discord.Client()
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
     if completed_giveaway == "NA":
+        print("TIMER ERROR")
         return
-    print("giveaway "+ completed_giveaway.get_id() +"is closest to current time")
+    print("giveaway "+ completed_giveaway.get_id() +" is complete")
     giveaway_done(completed_giveaway)
     return 
 
 #expiration array should be [<year>, <month>, <day>, <hour=?>,<minute=?>,<second=0>]
 def start_timer(expiration_array):
-    expiry_date = datetime.datetime(expiration_array[0], expiration_array[1], expiration_array[2], expiration_array[3], expiration_array[4], expiration_array[5])
+    expiry_date = datetime.datetime(int(expiration_array[0]),int(expiration_array[1]), int(expiration_array[2]), int(expiration_array[3]), int(expiration_array[4]),int(expiration_array[5]))
     present_date = datetime.datetime.utcnow()
 
     difference = expiry_date - present_date 
-    print(difference)
     expiration_in_seconds = difference.total_seconds()
-    print(expiration_in_seconds)
 
+    if expiration_in_seconds < 0:
+        return "COMPLETE"
+    else:
+        print("creating timer to expire in: "+ str(int(expiration_in_seconds)) + " seconds")
 
     return Timer(int(expiration_in_seconds), timer_done)
 
@@ -58,8 +61,29 @@ def giveaway_done(giveaway):
     print("giveaway" + giveaway.get_id() + " complete")
     return
 
+def date_parser(date, time): # yyyy/mm/dd hh:mm
+    date_array = date.split(sep="/")
+    year = date_array[0]
+    month = date_array[1]
+    day = date_array[2]
 
+    time_array = time.split(sep=":")
+    hour = time_array[0]
+    minute = time_array[1]
 
+    return [year,month,day,hour,minute,0]
+timerlist = [] 
+def load_timers():
+    sql = "SELECT * FROM giveaways"
+    cursor.execute(sql)
+    giveaway_list = cursor.fetchall()
+    for x in giveaway_list:
+        date = date_parser(x[6],x[8])
+        timerlist.append(start_timer(date))
+    for x in timerlist:
+        if type(x) != str:
+            x.start()
+    return
 
 
 
@@ -125,10 +149,11 @@ async def switchME(message):
 async def list_giveaways(message):
     text = message.content.split(sep = " ")
     sql = "SELECT * FROM giveaways WHERE status=%s"
+    sql_2 = "active"
     if text[2] == "active":
         sql_2 = ("active", )
-    elif text[2] == "archive":
-        sql_2 = ("archive", )
+    elif text[2] == "archived":
+        sql_2 = ("archived", )
     cursor.execute(sql, sql_2)
     data  =  cursor.fetchall()
     giveaway_count = 0
@@ -136,12 +161,16 @@ async def list_giveaways(message):
     for x in data:
         giveaways.append(retrieve_giveaway(x[0]))
         giveaway_count += 1
+    for x in giveaways:
+        await preview_giveaway(message, x.get_id())
     database.commit()
-    msg = "test"
     return #leaving it at this for now
 
-async def preview_giveaway(message):
-    giveaway_id = (message.content.split(sep = " "))[1]
+async def preview_giveaway(message, listmode=0):
+    if listmode != 0:
+        giveaway_id = listmode 
+    else:
+        giveaway_id = (message.content.split(sep = " "))[1]
     giveaway = retrieve_giveaway(giveaway_id)
     if giveaway == "NA":
         await client.send_message(message.channel, "Invalid ID!")
@@ -256,7 +285,7 @@ async def set_date(message):
     hour = time[0]
     minute = time[1]
     
-    print(year +" " + month + " " + day + " " + hour + " " +minute)
+    #print(year +" " + month + " " + day + " " + hour + " " +minute)
     timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
     timer.start()
 
@@ -283,6 +312,8 @@ async def add_entrant(user, message):
             giveaway_id = content[x+1] + content[x+2]
     print("retrived it: "+giveaway_id)
     giveaway = retrieve_giveaway(giveaway_id)
+    if giveaway == "NA":
+        return
     entrant_id = user.id
     giveaway.add_entrant(entrant_id)
     print(giveaway_id)
@@ -293,6 +324,8 @@ async def add_entrant(user, message):
 @client.event
 async def on_reaction_add(reaction,user):
     message = reaction.message
+    if message.author != client.user:
+        return
     await add_entrant(user,message)
     print("reaction detected")
     return
@@ -324,6 +357,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    load_timers()
 
 
 client.run(TOKEN)
