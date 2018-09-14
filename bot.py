@@ -47,8 +47,16 @@ def start_timer(expiration_array):
     difference = expiry_date - present_date 
     expiration_in_seconds = difference.total_seconds()
 
+    print(expiry_date)
+    print(present_date)
+    print(difference)
+    print(str(int(expiration_in_seconds))+ " in seconds")
+
     if expiration_in_seconds < 0:
-        return "COMPLETE"
+        print("invalid date!(for testing)")
+        return "string to fail test"
+    if expiration_in_seconds > 1000000000:
+        return "failed string"
     else:
         print("creating timer to expire in: "+ str(int(expiration_in_seconds)) + " seconds")
 
@@ -57,6 +65,7 @@ def start_timer(expiration_array):
 def giveaway_done(giveaway):
     giveaway.set_status("archived")
     giveaway.draw_winners(giveaway.get_number_of_winners())
+    giveaway.replace_winners = 1
     store_giveaway(giveaway)
     print("giveaway" + giveaway.get_id() + " complete")
     return
@@ -77,6 +86,7 @@ def load_timers():
     sql = "SELECT * FROM giveaways"
     cursor.execute(sql)
     giveaway_list = cursor.fetchall()
+    database.commit()
     for x in giveaway_list:
         date = date_parser(x[6],x[8])
         timerlist.append(start_timer(date))
@@ -89,12 +99,15 @@ def load_timers():
 
 print("Discord Version: " + discord.__version__)
 #           function takes giveaway id and returns a corresponding giveaway object if it exists
-#call this when the giveaway ends, or to redraw. sending message to winners will be in seperate function
+#call this to redraw. If called mnually, fails if givaway not over.
 async def redraw_winners(message):
     text = message.content.split(sep = " ")
     giveaway = retrieve_giveaway(text[1])
     if giveaway == "NA":
         client.send_message(message.channel, "Invalid ID")
+        return
+    if giveaway.get_status() != "archived":
+        await client.send_message(message.channel, "This giveaway is not complete! Unable to redraw!")
         return
     giveaway.draw_winners(giveaway.get_number_of_winners())
     giveaway.replace_winners = 1
@@ -201,6 +214,25 @@ async def preview_giveaway(message, listmode=0):
 
 
     await client.send_message(message.channel,content=msg,embed=em)
+    return
+
+
+async def enter_pm(user, giveaway):
+    line1 = "You have been entered for giveaway "+ giveaway.get_id() +"\n"
+    line2 = "Description: " + giveaway.get_description() + "\n"
+    line3 = "End date: " + giveaway.timeframe.end +"\n"
+    line4 = "If you win, you will be notified by the bot and a TC staff member. Good luck! \n"
+    
+    em = discord.Embed()
+    em.set_image(url=giveaway.get_image())
+    msg = line1 + line2 + line3 + line4
+    try:
+        await client.send_message(await client.get_user_info(user),content=msg,embed=em)
+    except:
+        print("User "+ user +" Has messages from other server members disabled!") 
+    return
+    
+
 #create an empty giveaway and asign a new id
 async def create_giveaway(message):
     new_giveaway = giveaway(message)
@@ -258,7 +290,7 @@ async def set_winners(message):
         return
     giveaway.set_number_of_winners(text[3])
     store_giveaway(giveaway)
-    msg =  ("There are now "+ giveaway.get_number_of_winners() +" Winners for giveway '" + giveaway.get_id()+"'" )
+    msg =  ("There are now "+ giveaway.get_number_of_winners() +" winners for giveway '" + giveaway.get_id()+"'" )
     await client.send_message(message.channel,msg) 
 
 async def set_date(message):
@@ -287,6 +319,10 @@ async def set_date(message):
     
     #print(year +" " + month + " " + day + " " + hour + " " +minute)
     timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
+    if(type(timer) == str):
+        print("ivalid nidnwi")
+        print(timer)
+        return
     timer.start()
 
     store_giveaway(giveaway)
@@ -318,9 +354,14 @@ async def add_entrant(user, message):
     giveaway.add_entrant(entrant_id)
     print(giveaway_id)
     print(giveaway.entrants)
+    await enter_pm(entrant_id, giveaway)
     store_giveaway(giveaway)
     return
 
+
+
+
+    return
 @client.event
 async def on_reaction_add(reaction,user):
     message = reaction.message

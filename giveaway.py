@@ -128,19 +128,6 @@ class giveaway:
     def set_number_of_winners(self, integer):
         self.number_of_winners = integer
         return
-    def set_timeframe(self,start_end, date, time):
-        if (start_end == "start"):
-            self.timeframe.start = date
-            self.timeframe.starttime = time
-            return
-        elif (start_end == "end"):
-            self.timeframe.end = date
-            self.timeframe.endtime = time
-            return
-        else:
-            raise ValueError('There was an error with the timeframe for giveaway:' + self.id)
-            return
-
     def set_header(self,header):
         self.header = header
         return
