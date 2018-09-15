@@ -47,13 +47,7 @@ def start_timer(expiration_array):
     difference = expiry_date - present_date 
     expiration_in_seconds = difference.total_seconds()
 
-    print(expiry_date)
-    print(present_date)
-    print(difference)
-    print(str(int(expiration_in_seconds))+ " in seconds")
-
     if expiration_in_seconds < 0:
-        print("invalid date!(for testing)")
         return "string to fail test"
     if expiration_in_seconds > 1000000000:
         return "failed string"
@@ -217,7 +211,7 @@ async def preview_giveaway(message, listmode=0):
     return
 
 
-async def enter_pm(user, giveaway):
+async def enter_pm(user_id, giveaway):
     line1 = "You have been entered for giveaway "+ giveaway.get_id() +"\n"
     line2 = "Description: " + giveaway.get_description() + "\n"
     line3 = "End date: " + giveaway.timeframe.end +"\n"
@@ -232,7 +226,19 @@ async def enter_pm(user, giveaway):
         print("User "+ user +" Has messages from other server members disabled!") 
     return
     
-
+async def winner_pm(user_id, giveaway):
+    user = client.get_user_info(user_id)
+    line1 = "Winner winner Chicken Dinner!\n"
+    line2 = "Congratulations "+user.mention()+" You have won giveaway "+giveaway.get_id()+"\n"
+    line3 = "A Community Manager will contact you shortly.\n"
+    date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
+    date.day = date.day + 7
+    line4 = "You will have until "+ str(date) +" to collect your prize.\n"
+    em = discord.Embed()    
+    em.set_image = giveaway.get_image()
+    msg = line1+line2+line3+line4
+    await client.send_message(user,content=msg,embed=em)
+    return
 #create an empty giveaway and asign a new id
 async def create_giveaway(message):
     new_giveaway = giveaway(message)
@@ -240,8 +246,6 @@ async def create_giveaway(message):
     current_date = datetime.datetime.utcnow()
     formatstring = str(current_date.year) +"/"+str(current_date.month)+"/"+str(current_date.day)
     formatstring1 = str(current_date.hour)+":"+str(current_date.minute)
-    print(formatstring)
-    print(formatstring1)
     new_giveaway.timeframe.start = formatstring
     new_giveaway.timeframe.starttime = formatstring1
     store_giveaway(new_giveaway)
@@ -320,8 +324,6 @@ async def set_date(message):
     #print(year +" " + month + " " + day + " " + hour + " " +minute)
     timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
     if(type(timer) == str):
-        print("ivalid nidnwi")
-        print(timer)
         return
     timer.start()
 
@@ -343,25 +345,18 @@ async def add_entrant(user, message):
     giveaway_id = "-1"
     content = message.content
     for x in range(11, 15):#area where we identify the giveaway id.
-        print (content[x])
         if ((content[x] == '#' and content[x+4] == '|') or (content[x] == '#' and content[x+3] == '|')):
             giveaway_id = content[x+1] + content[x+2]
-    print("retrived it: "+giveaway_id)
     giveaway = retrieve_giveaway(giveaway_id)
     if giveaway == "NA":
         return
     entrant_id = user.id
     giveaway.add_entrant(entrant_id)
-    print(giveaway_id)
-    print(giveaway.entrants)
     await enter_pm(entrant_id, giveaway)
     store_giveaway(giveaway)
     return
 
 
-
-
-    return
 @client.event
 async def on_reaction_add(reaction,user):
     message = reaction.message
@@ -371,26 +366,12 @@ async def on_reaction_add(reaction,user):
     print("reaction detected")
     return
 
-#@client.event
-#async def on_raw_reaction_add(payload):
-#    message = await client.get_message(payload.message_id)
-#    user = client.get_user_info(payload.user_id)
-#    await add_entrant(user,message)
-#    print("reaction detected")
-#    return
 
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
     await switchME(message)
-
-async def Hello(message):
-
-    msg = 'Hello {0.author.mention}'.format(message)
-    await client.send_message(message.channel, msg)
-
-
 
 @client.event
 async def on_ready():
