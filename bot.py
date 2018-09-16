@@ -4,7 +4,7 @@ import discord
 import asyncio
 import time
 import mysql.connector
-from threading import Timer
+import threading
 from giveaway import giveaway
 import details
 import read_write
@@ -20,24 +20,21 @@ database = mysql.connector.connect(
 )
 
 cursor = database.cursor()
-
+Timer = threading.Timer
 read_write.create_giveaway_tables()
 store_giveaway = read_write.store_giveaway
 retrieve_giveaway = read_write.retrieve_giveaway
 
 TOKEN = details.token
 client = discord.Client()
-
-
-
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
     if completed_giveaway == "NA":
-        print("TIMER ERROR")
+        print("No giveaway done")
         return
     print("giveaway "+ completed_giveaway.get_id() +" is complete")
     giveaway_done(completed_giveaway)
-    return 
+    return
 
 #expiration array should be [<year>, <month>, <day>, <hour=?>,<minute=?>,<second=0>]
 def start_timer(expiration_array):
@@ -49,7 +46,7 @@ def start_timer(expiration_array):
 
     if expiration_in_seconds < 0:
         return "string to fail test"
-    if expiration_in_seconds > 1000000000:
+    elif expiration_in_seconds > 1000000000:
         return "failed string"
     else:
         print("creating timer to expire in: "+ str(int(expiration_in_seconds)) + " seconds")
@@ -61,6 +58,11 @@ def giveaway_done(giveaway):
     giveaway.draw_winners(giveaway.get_number_of_winners())
     giveaway.replace_winners = 1
     store_giveaway(giveaway)
+    reloaded = retrieve_giveaway(giveaway.get_id())
+    winners = ()
+    for x in reloaded.get_winners():
+        print(x[0]+ "is a winner")
+        winners = winners + (x,)
     print("giveaway" + giveaway.get_id() + " complete")
     return
 
@@ -138,7 +140,8 @@ async def switchME(message):
                 "winners":set_winners,
                 "add":create_giveaway,
                 "list":list_giveaways,
-                "date":set_date}
+                "date":set_date,
+                "datenow":print_current_time}
 
         if dictionary.get(command[1]) != None:
             await dictionary.get(command[1])(message)
@@ -209,8 +212,10 @@ async def preview_giveaway(message, listmode=0):
 
     await client.send_message(message.channel,content=msg,embed=em)
     return
-
-
+async def print_current_time(message):
+    msg = datetime.datetime.utcnow()
+    await client.send_message(message.channel,str(msg))
+    return
 async def enter_pm(user_id, giveaway):
     line1 = "You have been entered for giveaway "+ giveaway.get_id() +"\n"
     line2 = "Description: " + giveaway.get_description() + "\n"
@@ -220,24 +225,26 @@ async def enter_pm(user_id, giveaway):
     em = discord.Embed()
     em.set_image(url=giveaway.get_image())
     msg = line1 + line2 + line3 + line4
+    user = await client.get_user_info(user_id)
     try:
-        await client.send_message(await client.get_user_info(user),content=msg,embed=em)
+        await client.send_message(user,content=msg,embed=em)
     except:
-        print("User "+ user +" Has messages from other server members disabled!") 
+        print("User "+ user.name +" Has messages from other server members disabled!") 
     return
     
-async def winner_pm(user_id, giveaway):
-    user = client.get_user_info(user_id)
-    line1 = "Winner winner Chicken Dinner!\n"
-    line2 = "Congratulations "+user.mention()+" You have won giveaway "+giveaway.get_id()+"\n"
-    line3 = "A Community Manager will contact you shortly.\n"
-    date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
-    date.day = date.day + 7
-    line4 = "You will have until "+ str(date) +" to collect your prize.\n"
-    em = discord.Embed()    
-    em.set_image = giveaway.get_image()
-    msg = line1+line2+line3+line4
-    await client.send_message(user,content=msg,embed=em)
+async def winner_pm(winners, giveaway):
+    for user_id in winners:
+        user = client.get_user_info(user_id)
+        line1 = "Winner winner Chicken Dinner!\n"
+        line2 = "Congratulations "+user.mention()+" You have won giveaway "+giveaway.get_id()+"\n"
+        line3 = "A Community Manager will contact you shortly.\n"
+        date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
+        date.day = date.day + 7
+        line4 = "You will have until "+ str(date) +" to collect your prize.\n"
+        em = discord.Embed()    
+        em.set_image(giveaway.get_image())
+        msg = line1+line2+line3+line4
+        await client.send_message(user,content=msg,embed=em)
     return
 #create an empty giveaway and asign a new id
 async def create_giveaway(message):
@@ -351,8 +358,15 @@ async def add_entrant(user, message):
     if giveaway == "NA":
         return
     entrant_id = user.id
-    giveaway.add_entrant(entrant_id)
-    await enter_pm(entrant_id, giveaway)
+    already_entered = 0
+    for x in giveaway.get_entrants():
+        if entrant_id == x[0]:
+            already_entered = 1
+
+    if already_entered == 0:
+        giveaway.add_entrant(entrant_id)
+        await enter_pm(entrant_id, giveaway)
+
     store_giveaway(giveaway)
     return
 
@@ -380,6 +394,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
     load_timers()
-
 
 client.run(TOKEN)

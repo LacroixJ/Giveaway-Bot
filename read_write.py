@@ -33,6 +33,8 @@ def check_recent():
             if (biggest_date - date).total_seconds() < 0 and (date-datetime.datetime.utcnow()).total_seconds() <= 10:
                 biggest_date = date
                 giveaway_id = x[0]
+    if (abs(biggest_date - datetime.datetime.utcnow())).total_seconds() > 180:
+        print("checked recent but no finished giveaways")
     return giveaway_id
 
 
