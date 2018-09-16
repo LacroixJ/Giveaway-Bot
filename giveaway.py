@@ -2,6 +2,7 @@ import discord
 import hashlib
 import mysql.connector
 import secrets
+import asyncio
 
 database = mysql.connector.connect(
         auth_plugin = "mysql_native_password",

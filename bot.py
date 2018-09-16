@@ -62,7 +62,7 @@ def giveaway_done(giveaway):
     winners = ()
     for x in reloaded.get_winners():
         print(x[0]+ "is a winner")
-        winners = winners + (x,)
+        winners = winners + (x[0],)
     print("giveaway" + giveaway.get_id() + " complete")
     return
 
