@@ -28,35 +28,6 @@ retrieve_giveaway = read_write.retrieve_giveaway
 TOKEN = details.token
 client = discord.Client()
 
-donelist = []
-active = 0
-
-@client.event
-async def on_member_update(var1,var2):
-    global active
-    global donelist
-    if active == 0:
-        active = 1
-        if len(donelist) == 0:
-            active = 0
-            return
-        popvalues =[]
-        for i in range(len(donelist)):
-            for j in range(len(donelist)):
-                if donelist[i] == donelist[j] and i!=j:
-                    popvalues.append(i)
-        for x in popvalues:
-            donelist.pop(x)
-        print("length   "+str(len(donelist)))
-        for i in range(len(donelist)):
-            print (donelist[0].get_id())
-            await winner_pm(donelist[0])
-            time.sleep(1)
-            await loser_pm(donelist[0])
-            donelist.pop(0)
-            time.sleep(1)
-    active = 0
-    return
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
     if completed_giveaway == "NA":
@@ -122,9 +93,8 @@ def load_timers():
 
 
 
-print("Discord Version: " + discord.__version__)
-#           function takes giveaway id and returns a corresponding giveaway object if it exists
-#call this to redraw. If called mnually, fails if givaway not over.
+#function takes giveaway id and returns a corresponding giveaway object if it exists
+#call this to redraw. Fails if giveaway not over.
 async def redraw_winners(message):
     text = message.content.split(sep = " ")
     giveaway = retrieve_giveaway(text[1])
@@ -157,7 +127,9 @@ async def switchME(message):
 
     if x.startswith("!giveaway"):
         command = x.split(sep = " ")
-
+        if len(command) == 1:
+            await help_message(message)
+            return
         dictionary = {
                 "redraw":redraw_winners,
                 "preview":preview_giveaway,
@@ -170,8 +142,9 @@ async def switchME(message):
                 "add":create_giveaway,
                 "list":list_giveaways,
                 "date":set_date,
-                "datenow":print_current_time}
-
+                "datenow":print_current_time,
+                "help":help_message}
+ 
         if dictionary.get(command[1]) != None:
             await dictionary.get(command[1])(message)
         elif len(command) > 2:
@@ -184,15 +157,40 @@ async def switchME(message):
             await client.send_message(message.channel,"Invalid command! use !giveaway help for the list of commands")
 
     return
-#               provide a list of giveaways with images #TODO wait for that scrolly thing
+async def help_message(message):
+    msg ="""```\n 
+\n
+All giveaway commands start with !giveaway\n
+[giveaway_id] redraw -> redraw giveaway winners\n
+[giveaway_id] preview -> preview giveaway\n
+[giveaway_id] archive -> archive giveaway\n
+[giveaway_id] delete -> deletes giveaway\n
+[giveaway_id] header <header> -> sets giveaway header\n
+[giveaway_id] description [giveaway_id] -> sets giveaway description\n
+[giveaway_id] image <image url> -> sets the giveaway embed image, takes http(s) urls\n
+[giveaway_id] winners [number of winners] -> set the number of winners for the giveaway\n
+add -> create a new giveaway, id will be given\n
+list [active/archived] -> list all active or all archived(complete) giveaways\n
+[giveaway_id] date [yyyy/mm/dd hh:mm] -> sets the end date for the giveaway,\nTime MUST be in UTC and 24 hour clock\n
+datenow -> prints the current day and time, usefull for determining giveaway end times\n
+help ->  this message\n```
+            """
+    await client.send_message(message.channel,msg)
+    return
 async def list_giveaways(message):
     text = message.content.split(sep = " ")
     sql = "SELECT * FROM giveaways WHERE status=%s"
     sql_2 = "active"
+    if len(text) == 2:
+        await client.send_message(message.channel, "Usage: !giveaway list [active/archived]")
+        return
     if text[2] == "active":
         sql_2 = ("active", )
     elif text[2] == "archived":
         sql_2 = ("archived", )
+    else:
+        await client.send_message(message.channel, "Usage: !giveaway list [active/archived]")
+        return
     cursor.execute(sql, sql_2)
     data  =  cursor.fetchall()
     giveaway_count = 0
@@ -203,7 +201,7 @@ async def list_giveaways(message):
     for x in giveaways:
         await preview_giveaway(message, x.get_id())
     database.commit()
-    return #leaving it at this for now
+    return 
 
 async def preview_giveaway(message, listmode=0):
     if listmode != 0:
@@ -266,10 +264,12 @@ async def loser_pm(giveaway):
     for x in losers_tuple:
         losers_list.append(x)
     winners = giveaway.get_winners()
+    winners_list = []
+    for x in winners:
+        winners_list.append(x)
     for x in losers_list:
-        for y in winners:
-            if x == y:
-                losers_list.remove(x)
+        if x in winners_list:
+            losers_list.remove(x)
     for user_id in losers_list:
         user = await client.get_user_info(user_id[0])
         line1 = "Better Luck Next Time.\n"
@@ -354,8 +354,8 @@ async def set_image(message):
 async def set_winners(message):
     text = message.content.split(sep = " ")
     giveaway = retrieve_giveaway(text[1])
-    if giveaway == "NA": #means there was an error in the read function
-        await client.send_message(message.channel,"Invalid giveaway id!")
+    if giveaway == "NA" or len(text) < 4: #means there was an error in the read function
+        await client.send_message(message.channel,"Invalid giveaway id, or not enough parameters passed!!")
         return
     giveaway.set_number_of_winners(text[3])
     store_giveaway(giveaway)
@@ -389,6 +389,7 @@ async def set_date(message):
     #print(year +" " + month + " " + day + " " + hour + " " +minute)
     timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
     if(type(timer) == str):
+        await client.send_message(message.channel, "Invalid time!")
         return
     timer.start()
 
@@ -428,6 +429,35 @@ async def add_entrant(user, message):
     store_giveaway(giveaway)
     return
 
+donelist = []
+active = 0
+
+@client.event                 # This is how I got around not being able to mix threads with coroutines
+async def on_member_update(var1,var2): #checks a global variable for complete giveaways and then sends various pms
+    global active                       #activates whenenver a profile updates somehow.
+    global donelist
+    if active == 0:
+        active = 1
+        if len(donelist) == 0:
+            active = 0
+            return
+        popvalues =[]
+        for i in range(len(donelist)):
+            for j in range(len(donelist)):
+                if donelist[i] == donelist[j] and i!=j:
+                    popvalues.append(i)
+        for x in popvalues:
+            donelist.pop(x)
+        print("length   "+str(len(donelist)))
+        for i in range(len(donelist)):
+            print (donelist[0].get_id())
+            await winner_pm(donelist[0])
+            time.sleep(1)
+            await loser_pm(donelist[0])
+            donelist.pop(0)
+            time.sleep(1)
+    active = 0
+    return
 
 @client.event
 async def on_reaction_add(reaction,user):
@@ -449,6 +479,7 @@ async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
+    print("Discord Version: " + discord.__version__)
     print('------')
     load_timers()
 

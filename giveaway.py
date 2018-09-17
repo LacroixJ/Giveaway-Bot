@@ -18,14 +18,20 @@ def id_generator(message):
     sql = "SELECT *  FROM giveaways"
     cursor.execute(sql)
     data  = cursor.fetchall()
- #   for x in data:
- #       print (x)
-    x = 0
-    for i in data:
-        if x == int(i[0]):
-            x += 1
-    database.commit()
-    return str(x)
+    value_not_found = 1
+    value = 0 
+    taken = 0
+    while(value_not_found):
+        for x in data:
+            if x[0] == str(value):
+                taken = 1
+        if taken == 1:
+            value += 1
+            taken = 0
+        else:
+            database.commit()
+            return str(value)
+            
 
 # random id gen
 #def id_generator(message):
