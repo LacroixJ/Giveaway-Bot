@@ -27,6 +27,36 @@ retrieve_giveaway = read_write.retrieve_giveaway
 
 TOKEN = details.token
 client = discord.Client()
+
+donelist = []
+active = 0
+
+@client.event
+async def on_member_update(var1,var2):
+    global active
+    global donelist
+    if active == 0:
+        active = 1
+        if len(donelist) == 0:
+            active = 0
+            return
+        popvalues =[]
+        for i in range(len(donelist)):
+            for j in range(len(donelist)):
+                if donelist[i] == donelist[j] and i!=j:
+                    popvalues.append(i)
+        for x in popvalues:
+            donelist.pop(x)
+        print("length   "+str(len(donelist)))
+        for i in range(len(donelist)):
+            print (donelist[0].get_id())
+            await winner_pm(donelist[0])
+            time.sleep(1)
+            await loser_pm(donelist[0])
+            donelist.pop(0)
+            time.sleep(1)
+    active = 0
+    return
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
     if completed_giveaway == "NA":
@@ -61,9 +91,8 @@ def giveaway_done(giveaway):
     reloaded = retrieve_giveaway(giveaway.get_id())
     winners = ()
     for x in reloaded.get_winners():
-        print(x[0]+ "is a winner")
         winners = winners + (x[0],)
-    print("giveaway" + giveaway.get_id() + " complete")
+    donelist.append(reloaded)
     return
 
 def date_parser(date, time): # yyyy/mm/dd hh:mm
@@ -231,18 +260,41 @@ async def enter_pm(user_id, giveaway):
     except:
         print("User "+ user.name +" Has messages from other server members disabled!") 
     return
-    
-async def winner_pm(winners, giveaway):
+async def loser_pm(giveaway):
+    losers_tuple = giveaway.get_entrants()
+    losers_list = []
+    for x in losers_tuple:
+        losers_list.append(x)
+    winners = giveaway.get_winners()
+    for x in losers_list:
+        for y in winners:
+            if x == y:
+                losers_list.remove(x)
+    for user_id in losers_list:
+        user = await client.get_user_info(user_id[0])
+        line1 = "Better Luck Next Time.\n"
+        line2 = "Yikes "+user.mention+" You didin't win giveaway "+giveaway.get_id()+"\n"
+        line3 = "Since you are a winner in our book, we are awarding you an extra entry in the next giveaway you join. Good Luck!(not implemented yet)\n"
+        em = discord.Embed()    
+        em.set_image(url=giveaway.get_image())
+        msg = line1+line2+line3
+        await client.send_message(user,content=msg,embed=em)
+    return
+async def winner_pm(giveaway):
+    users_tuple = giveaway.get_winners()
+    winners = []
+    for x in users_tuple:
+        winners.append(x)
     for user_id in winners:
-        user = client.get_user_info(user_id)
+        user = await client.get_user_info(user_id[0])
         line1 = "Winner winner Chicken Dinner!\n"
-        line2 = "Congratulations "+user.mention()+" You have won giveaway "+giveaway.get_id()+"\n"
+        line2 = "Congratulations "+user.mention+" You have won giveaway "+giveaway.get_id()+"\n"
         line3 = "A Community Manager will contact you shortly.\n"
         date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
-        date.day = date.day + 7
-        line4 = "You will have until "+ str(date) +" to collect your prize.\n"
+        date[2] = str(int(date[2]) + 7)
+        line4 = "You will have until "+ date[0]+"/"+date[1]+"/"+date[2]  +" to collect your prize.\n"
         em = discord.Embed()    
-        em.set_image(giveaway.get_image())
+        em.set_image(url=giveaway.get_image())
         msg = line1+line2+line3+line4
         await client.send_message(user,content=msg,embed=em)
     return
@@ -265,7 +317,10 @@ async def set_header(message):
     if giveaway == "NA": #means there was an error in the read function
         await client.send_message(message.channel,"Invalid giveaway id!")
         return
-    giveaway.set_header(text[3])
+    header = ""
+    for x in range(3,len(text)):
+        header = header + text[x] + " "
+    giveaway.set_header(header)
     store_giveaway(giveaway)
     msg =  ("The new header for giveaway '" + giveaway.get_id() + "' is '" + giveaway.get_header()+ "'")
     await client.send_message(message.channel,msg)
@@ -277,7 +332,10 @@ async def set_description(message):
     if giveaway == "NA": #means there was an error in the read function
         await client.send_message(message.channel,"Invalid giveaway id!")
         return
-    giveaway.set_description(text[3])
+    description = ""
+    for x in range(3,len(text)):
+        description = description + text[x] + " "
+    giveaway.set_description(description)
     store_giveaway(giveaway)
     msg =  ("The new description for giveaway '" + giveaway.get_id() + "' is '" + giveaway.get_description()+ "'")
     await client.send_message(message.channel,msg)
@@ -377,7 +435,6 @@ async def on_reaction_add(reaction,user):
     if message.author != client.user:
         return
     await add_entrant(user,message)
-    print("reaction detected")
     return
 
 
