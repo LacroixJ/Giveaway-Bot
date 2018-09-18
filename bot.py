@@ -9,8 +9,10 @@ from giveaway import giveaway
 import details
 import read_write
 import datetime
+import secrets
 
-
+EM_COLOUR = 16777215
+EM_FOOTER = ":tc: Powered by Trade Central"
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -27,6 +29,7 @@ retrieve_giveaway = read_write.retrieve_giveaway
 
 TOKEN = details.token
 client = discord.Client()
+read_write.entry_number(140943459593748480)
 
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
@@ -158,24 +161,38 @@ async def switchME(message):
 
     return
 async def help_message(message):
-    msg ="""```\n 
-\n
-All giveaway commands start with !giveaway\n
-[giveaway_id] redraw -> redraw giveaway winners\n
-[giveaway_id] preview -> preview giveaway\n
-[giveaway_id] archive -> archive giveaway\n
-[giveaway_id] delete -> deletes giveaway\n
-[giveaway_id] header <header> -> sets giveaway header\n
-[giveaway_id] description [giveaway_id] -> sets giveaway description\n
-[giveaway_id] image <image url> -> sets the giveaway embed image, takes http(s) urls\n
-[giveaway_id] winners [number of winners] -> set the number of winners for the giveaway\n
-add -> create a new giveaway, id will be given\n
-list [active/archived] -> list all active or all archived(complete) giveaways\n
-[giveaway_id] date [yyyy/mm/dd hh:mm] -> sets the end date for the giveaway,\nTime MUST be in UTC and 24 hour clock\n
-datenow -> prints the current day and time, usefull for determining giveaway end times\n
-help ->  this message\n```
+    msg ="""All giveaway commands start with !giveaway\n
+**1. Create a giveaway**
+```!giveaway add```- Creates a new giveaway, id will be given\n
+**2. Set End Date for a Giveaway (UTC 24h Format)**
+```!giveaway [giveaway_id] date [yyyy/mm/dd hh:mm]```- Sets the end date for the giveaway. Time MUST be in UTC and 24 hour clock\n
+**3. Get Present Date and Time**
+```!giveaway datenow```- Produces the current date in UTC\n
+**4. Set Giveaway Header**
+```!giveaway [giveaway_id] header <header>```- Set the header to desired statement\n
+**5. Set Giveaway Description**
+```!giveaway [giveaway_id] description```- Set the description to the desired statement\n
+**6. Set Giveaway Image**
+```!giveaway [giveaway_id] image [url]```- Set the giveaway embed image, takes http and https links. No gifs\n
+**7. Set the number of winners**
+```!giveaway [giveaway_id] winners [number of winners]```- Set how many people can win the giveaway\n
+**8. Redraw the Giveaway**
+```!giveaway [giveaway_id] redraw```- Redraws winners for the Giveaway, does not work until giveaway is complete or archived\n
+**9. Archive Giveaway**
+```!giveaway [giveaway_id] archive```- Marks the giveaway as complete\n
+**10. Delete Giveaway from Database**
+```!giveaway [giveaway_id] delete```- Deletes the giveaway permanently\n
+**11. Display or Preview a Giveaway**
+```!giveaway [giveaway_id] preview```- Preview the giveaway, can enter the giveaway by reacting to this message.\n
+**12. List all Giveaways**
+```!giveaway list [active/archived]```- Lists all completed or active giveaways depending on selection\n
+**13. Help**
+```!giveaway help```- This message\n
             """
-    await client.send_message(message.channel,msg)
+    em = discord.Embed(colour=EM_COLOUR, description = msg)
+    em.set_footer(text=EM_FOOTER)
+    
+    await client.send_message(message.channel,embed=em)
     return
 async def list_giveaways(message):
     text = message.content.split(sep = " ")
@@ -231,9 +248,10 @@ async def preview_giveaway(message, listmode=0):
             line3 = line3 + userstring + " "
         line3 = line3 + "**|** Congratulations! Winners will recieve a DM \n"
 
-    em = discord.Embed()
+    em = discord.Embed(colour = EM_COLOUR)
     image=(giveaway.get_image())
     em.set_image(url=image)
+    em.set_footer(text=EM_FOOTER)
     msg = line1 + line2 + line4 + line3
 
 
@@ -249,8 +267,9 @@ async def enter_pm(user_id, giveaway):
     line3 = "End date: " + giveaway.timeframe.end +"\n"
     line4 = "If you win, you will be notified by the bot and a TC staff member. Good luck! \n"
     
-    em = discord.Embed()
+    em = discord.Embed(colour = EM_COLOUR)
     em.set_image(url=giveaway.get_image())
+    em.set_footer(text=EM_FOOTER)
     msg = line1 + line2 + line3 + line4
     user = await client.get_user_info(user_id)
     try:
@@ -271,12 +290,14 @@ async def loser_pm(giveaway):
         if x in winners_list:
             losers_list.remove(x)
     for user_id in losers_list:
+        read_write.add_entry(user_id[0])
         user = await client.get_user_info(user_id[0])
         line1 = "Better Luck Next Time.\n"
         line2 = "Yikes "+user.mention+" You didin't win giveaway "+giveaway.get_id()+"\n"
         line3 = "Since you are a winner in our book, we are awarding you an extra entry in the next giveaway you join. Good Luck!(not implemented yet)\n"
-        em = discord.Embed()    
+        em = discord.Embed(colour=EM_COLOUR)    
         em.set_image(url=giveaway.get_image())
+        em.set_footer(text=EM_FOOTER)
         msg = line1+line2+line3
         await client.send_message(user,content=msg,embed=em)
     return
@@ -286,15 +307,21 @@ async def winner_pm(giveaway):
     for x in users_tuple:
         winners.append(x)
     for user_id in winners:
-        user = await client.get_user_info(user_id[0])
+        read_write.set_multiplier_to_one(user_id[0])
+        try:
+            user = await client.get_user_info(user_id[0])
+        except:
+            print(user_id +"is unable to receive msges fron this bot")
+            user = client.user
         line1 = "Winner winner Chicken Dinner!\n"
         line2 = "Congratulations "+user.mention+" You have won giveaway "+giveaway.get_id()+"\n"
         line3 = "A Community Manager will contact you shortly.\n"
         date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
         date[2] = str(int(date[2]) + 7)
         line4 = "You will have until "+ date[0]+"/"+date[1]+"/"+date[2]  +" to collect your prize.\n"
-        em = discord.Embed()    
+        em = discord.Embed(colour=EM_COLOUR)    
         em.set_image(url=giveaway.get_image())
+        em.set_footer(text=EM_FOOTER)
         msg = line1+line2+line3+line4
         await client.send_message(user,content=msg,embed=em)
     return
@@ -436,6 +463,7 @@ active = 0
 async def on_member_update(var1,var2): #checks a global variable for complete giveaways and then sends various pms
     global active                       #activates whenenver a profile updates somehow.
     global donelist
+    time.sleep(secrets.randbelow(1000)/100)#magic
     if active == 0:
         active = 1
         if len(donelist) == 0:
@@ -448,7 +476,6 @@ async def on_member_update(var1,var2): #checks a global variable for complete gi
                     popvalues.append(i)
         for x in popvalues:
             donelist.pop(x)
-        print("length   "+str(len(donelist)))
         for i in range(len(donelist)):
             print (donelist[0].get_id())
             await winner_pm(donelist[0])

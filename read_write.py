@@ -1,10 +1,11 @@
 import mysql.connector
-from giveaway import giveaway
 import details
 import discord
 import asyncio
 import datetime
 import time
+import giveaway
+
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -13,7 +14,41 @@ database = mysql.connector.connect(
     database = "tcgiveaway"
 )
 
+def entry_number(user_id):
+    sql = "SELECT * FROM entry_multiplier WHERE entrant_id=%s"
+    cursor.execute(sql,(str(user_id), ))
+    multy = cursor.fetchall()
+    if type(multy) != tuple:
+        database.commit()
+        return 1
+    multiple = multy[0][1]
+    database.commit()
+    if multiple == 0:
+        multiple = 1
+    return int(multiple)
 
+def add_entry(user_id):
+    sql = "SELECT * FROM entry_multiplier WHERE entrant_id=%s"
+    cursor.execute(sql,(str(user_id), ))
+    entrant = cursor.fetchall()
+    if len(entrant) < 1:
+        sql = "INSERT INTO entry_multiplier VALUES(%s,%s)"
+        values = (str(user_id),str(1))
+        cursor.execute(sql,values)
+        database.commit()
+        return
+    number_of_entries  =  int(entrant[0][1]) + 1
+    sql = "UPDATE entry_multiplier SET number_of_entries=%s WHERE entrant_id=%s"
+    cursor.execute(sql,(str(number_of_entries),str(user_id)))
+    database.commit()
+    return
+
+def set_multiplier_to_one(user_id):
+    sql = "UPDATE entry_multiplier SET number_of_entries=1 WHERE entrant_id=%s"
+    cursor.execute(sql,(str(user_id), ))
+    database.commit()
+
+    return
 def check_recent():
     sql = "SELECT * FROM giveaways"
     cursor.execute(sql)
@@ -29,7 +64,7 @@ def check_recent():
             hour = x[8].split(sep = ":")[0]
             minute = x[8].split(sep = ":")[1]
             date = datetime.datetime(int(year),int(month),int(day),int(hour),int(minute),0)
-            print (str(date)+" giveaway_id: " + x[0])
+    #        print (str(date)+" giveaway_id: " + x[0])
             if (biggest_date - date).total_seconds() < 0 and (date-datetime.datetime.utcnow()).total_seconds() <= 10:
                 biggest_date = date
                 giveaway_id = x[0]
@@ -79,6 +114,14 @@ def create_giveaway_tables():
         giveaway_id VARCHAR(255),
         entrant_id VARCHAR(255))""")
         print("created entrants table")
+    except Exception as e:
+        print(e)
+    
+    try:
+        cursor.execute("""CREATE TABLE entry_multiplier (
+        entrant_id VARCHAR(255),
+        number_of_entries VARCHAR(225))""")
+        print("created entries table")
     except Exception as e:
         print(e)
 
@@ -218,7 +261,7 @@ def retrieve_giveaway(giveaway_number):
     #print (len(details))
     #for x in details:
     #    print("details :" + x)
-    new_giveaway = giveaway()
+    new_giveaway = giveaway.giveaway()
 
     #load it in
     new_giveaway.set_id(details[0])

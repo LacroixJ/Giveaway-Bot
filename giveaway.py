@@ -3,6 +3,7 @@ import hashlib
 import mysql.connector
 import secrets
 import asyncio
+import read_write
 
 database = mysql.connector.connect(
         auth_plugin = "mysql_native_password",
@@ -80,18 +81,23 @@ class giveaway:
         #constructor
         return
     def draw_winners(self, winnercount):
-        x = 0
-        entrants = self.entrants
+        count = 0
+        entrants = []
+        for x in self.entrants:
+            for i in range(read_write.entry_number(x)):
+                entrants.append(str(x[0]))
+                #print("appending "+str(x[0]))
         self.winners = []
         if int(winnercount) > len(entrants):
             winnercount = len(entrants)
-        while (x<int(winnercount)):
+        while (count<int(winnercount)):
             self.winners = [secrets.choice(entrants)] + self.winners
-            x += 1
+            count += 1
             for i in entrants: #to stop people from wining the same giveaway twice
                 for j in self.winners:
                     if i == j:
                         entrants.remove(i)
+                        break
         return self.winners
 
 
