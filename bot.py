@@ -12,7 +12,7 @@ import datetime
 import secrets
 
 EM_COLOUR = 16777215
-EM_FOOTER = ":tc: Powered by Trade Central"
+EM_FOOTER = "Powered by Trade Central"
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -307,6 +307,7 @@ async def winner_pm(giveaway):
     for x in users_tuple:
         winners.append(x)
     for user_id in winners:
+        read_write.add_entry(user_id[0])
         read_write.set_multiplier_to_one(user_id[0])
         try:
             user = await client.get_user_info(user_id[0])

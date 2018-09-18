@@ -33,7 +33,7 @@ def add_entry(user_id):
     entrant = cursor.fetchall()
     if len(entrant) < 1:
         sql = "INSERT INTO entry_multiplier VALUES(%s,%s)"
-        values = (str(user_id),str(1))
+        values = (str(user_id),str(2))
         cursor.execute(sql,values)
         database.commit()
         return

@@ -86,7 +86,7 @@ class giveaway:
         for x in self.entrants:
             for i in range(read_write.entry_number(x)):
                 entrants.append(str(x[0]))
-                #print("appending "+str(x[0]))
+                print("appending "+str(x[0]))
         self.winners = []
         if int(winnercount) > len(entrants):
             winnercount = len(entrants)
