@@ -10,7 +10,7 @@ import details
 import read_write
 import datetime
 import secrets
-
+PERMS = 1
 EM_COLOUR = 15251015 
 EM_FOOTER = "To enter, react to the giveaway posting. Powered by Trade Central"  
 database = mysql.connector.connect(
@@ -20,6 +20,8 @@ database = mysql.connector.connect(
     passwd = details.password,
     database = "tcgiveaway"
 )
+whitelist_roles = ["Server Owner","Community Manager","Admin"]
+whitelist_users = ["140204931528392705"]
 
 cursor = database.cursor()
 Timer = threading.Timer
@@ -177,8 +179,29 @@ async def delete_giveaway(message):
     await client.send_message(message.channel, "deleted giveaway "+ giveaway_id)
 
 async def switchME(message):
-    x = message.content
+ 
+    if PERMS:
+        server = message.server
+        if server==None:
+            await client.send_message(message.channel,"Not accesible via PM")
+            return
+        server_roles  = server.roles
+        global whitelist_roles
+        global whitelist_users
+        author_roles = message.author.roles 
+       #for i in range(len(server_roles)):
+       #     print(str(i)+" "+ str(server_roles[i]))
+        lethimthrough = 0
+        for i in whitelist_roles:
+            for x in author_roles:
+                if x == i or str(message.author.id) in whitelist_users:
+                    lethimthrough=1
+            if lethimthrough:
+                break
+        if not(lethimthrough):
+            return
 
+    x = message.content       
     if x.startswith("!giveaway"):
         command = x.split(sep = " ")
         if len(command) == 1:
