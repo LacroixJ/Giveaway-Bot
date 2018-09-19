@@ -11,8 +11,8 @@ import read_write
 import datetime
 import secrets
 
-EM_COLOUR = 16777215
-EM_FOOTER = "Powered by Trade Central"
+EM_COLOUR = 15251015 
+EM_FOOTER = "To enter, react to the giveaway posting. Powered by Trade Central"  
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -29,7 +29,58 @@ retrieve_giveaway = read_write.retrieve_giveaway
 
 TOKEN = details.token
 client = discord.Client()
-read_write.entry_number(140943459593748480)
+
+async def update_messages(giveaway_id):
+    sql = "SELECT * FROM message_cache where giveaway_id=%s"
+    cursor.execute(sql,(giveaway_id, ))
+    messages = cursor.fetchall()
+    message_list = []
+    for i in range(len(messages)):
+        message_list.append(messages[i])
+    for x in message_list:
+        message_id = x[1]
+        try:
+            message = await client.get_message(client.get_channel(x[2]),x[1])
+        except:
+            donothing = 1
+        giveaway = retrieve_giveaway(giveaway_id)
+        if giveaway == "NA":
+            return
+        winning_users = []
+        for x in giveaway.get_winners():
+            winning_users.append(x)
+        if giveaway.get_status() == "active":
+            liveswitch = "\** LIVE \**"
+        else:
+            liveswitch = "\** COMPLETE \**"
+        line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** start-"+giveaway.timeframe.start)
+        line1_2 = str(" end-"+ giveaway.timeframe.end +" --"+giveaway.get_status()+"--"+" **| "+ giveaway.get_header()+"**              "+liveswitch+"\n")
+        line1 = line1_1 + line1_2
+        line2 = giveaway.get_description() + "\n"
+        line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
+        line4 = "Number of entrants: **" + str(len(giveaway.entrants))+"** \n"
+        if len(winning_users) == 0:
+            line3 = line3 + " Not Drawn \n"
+        else:
+            for i in winning_users:
+                user = await client.get_user_info(i[0])
+                userstring = user.mention
+                line3 = line3 + userstring + " "
+            line3 = line3 + "**|** Congratulations! Winners will recieve a DM \n"
+
+        em = discord.Embed(colour = EM_COLOUR)
+        image=(giveaway.get_image())
+        em.set_image(url=image)
+        em.set_footer(text=EM_FOOTER)
+        msg = line1 + line2 + line4 + line3
+        await client.edit_message(message,new_content=msg)
+        sql = "DELETE FROM message_cache WHERE message_id=%s"
+        cursor.execute(sql,(message_id, ))
+        database.commit()
+    return
+
+
+
 
 def timer_done():
     completed_giveaway = retrieve_giveaway(read_write.check_recent())
@@ -233,8 +284,12 @@ async def preview_giveaway(message, listmode=0):
     for x in giveaway.get_winners():
         winning_users.append(x)
 
+    if giveaway.get_status() == "active":
+        liveswitch = "\** LIVE \**"
+    else:
+        liveswitch = "\** COMPLETE \**"
     line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** start-"+giveaway.timeframe.start)
-    line1_2 = str(" end-"+ giveaway.timeframe.end +" --"+giveaway.get_status()+"--"+" **| "+ giveaway.get_header()+"**\n")
+    line1_2 = str(" end-"+ giveaway.timeframe.end +" --"+giveaway.get_status()+"--"+" **| "+ giveaway.get_header()+"**              "+liveswitch+"\n")
     line1 = line1_1 + line1_2
     line2 = giveaway.get_description() + "\n"
     line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
@@ -255,7 +310,11 @@ async def preview_giveaway(message, listmode=0):
     msg = line1 + line2 + line4 + line3
 
 
-    await client.send_message(message.channel,content=msg,embed=em)
+    message_to_cache = await client.send_message(message.channel,content=msg,embed=em)
+    sql = "INSERT INTO message_cache VALUES (%s,%s, %s)"
+    values = (giveaway_id, message_to_cache.id, message_to_cache.channel.id)
+    cursor.execute(sql,values)
+    database.commit()
     return
 async def print_current_time(message):
     msg = datetime.datetime.utcnow()
@@ -294,7 +353,7 @@ async def loser_pm(giveaway):
         user = await client.get_user_info(user_id[0])
         line1 = "Better Luck Next Time.\n"
         line2 = "Yikes "+user.mention+" You didin't win giveaway "+giveaway.get_id()+"\n"
-        line3 = "Since you are a winner in our book, we are awarding you an extra entry in the next giveaway you join. Good Luck!(not implemented yet)\n"
+        line3 = "Since you are a winner in our book, we are awarding you an extra entry in future giveaways until you win one. Good Luck!\n"
         em = discord.Embed(colour=EM_COLOUR)    
         em.set_image(url=giveaway.get_image())
         em.set_footer(text=EM_FOOTER)
@@ -471,6 +530,7 @@ async def on_member_update(var1,var2): #checks a global variable for complete gi
             active = 0
             return
         popvalues =[]
+        await update_messages(donelist[0].get_id())
         for i in range(len(donelist)):
             for j in range(len(donelist)):
                 if donelist[i] == donelist[j] and i!=j:
@@ -478,7 +538,6 @@ async def on_member_update(var1,var2): #checks a global variable for complete gi
         for x in popvalues:
             donelist.pop(x)
         for i in range(len(donelist)):
-            print (donelist[0].get_id())
             await winner_pm(donelist[0])
             time.sleep(1)
             await loser_pm(donelist[0])
@@ -510,5 +569,6 @@ async def on_ready():
     print("Discord Version: " + discord.__version__)
     print('------')
     load_timers()
+
 
 client.run(TOKEN)

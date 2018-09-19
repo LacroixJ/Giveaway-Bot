@@ -89,7 +89,7 @@ def create_giveaway_tables():
         timestart VARCHAR(255),
         timeend VARCHAR(255),
         status VARCHAR(255))""")
-        print("table created")
+        print("giveaway table created")
     except Exception as e:
         print(e)
 
@@ -125,6 +125,14 @@ def create_giveaway_tables():
     except Exception as e:
         print(e)
 
+    try:
+        cursor.execute("""CREATE TABLE message_cache (
+        giveaway_id VARCHAR(255),
+        message_id  VARCHAR(255),
+        message_channel VARCHAR(255))""")
+        print("created message cache")
+    except Exception as e:
+        print(e)
 def store_giveaway(giveaway):
     try:
         cursor.execute("SELECT giveaway_id FROM giveaways")
