@@ -10,7 +10,9 @@ import details
 import read_write
 import datetime
 import secrets
-PERMS = 1
+import sys
+
+PERMS = 0
 EM_COLOUR = 15251015 
 EM_FOOTER = "To enter, react to the giveaway posting. Powered by Trade Central"  
 database = mysql.connector.connect(
@@ -220,7 +222,10 @@ async def switchME(message):
                 "list":list_giveaways,
                 "date":set_date,
                 "datenow":print_current_time,
-                "help":help_message}
+                "poweroff":shut_down,
+                "dev":dev_message,
+                "help":help_message
+                }
  
         if dictionary.get(command[1]) != None:
             await dictionary.get(command[1])(message)
@@ -234,6 +239,22 @@ async def switchME(message):
             await client.send_message(message.channel,"Invalid command! use !giveaway help for the list of commands")
 
     return
+
+async def shut_down(message):
+    print("shutdown called")
+    print("logging out....")
+    time.sleep(2)
+    try:
+        await client.logout()
+        sys.exit(0)
+    except:
+        print("killed timers")
+
+async def dev_message(message):
+    user = await client.get_user_info(140204931528392705) 
+    await client.send_message(message.channel, user.mention  + "Giveaway bot ping")
+    return
+
 async def help_message(message):
     msg ="""All giveaway commands start with !giveaway\n
 **1. Create a giveaway**
@@ -260,7 +281,11 @@ async def help_message(message):
 ```!giveaway [giveaway_id] preview```- Preview the giveaway, can enter the giveaway by reacting to this message.\n
 **12. List all Giveaways**
 ```!giveaway list [active/archived]```- Lists all completed or active giveaways depending on selection\n
-**13. Help**
+**13. Shutdown. **
+```!giveaway poweroff```- Will forcefully make the bot log off and shut down. Bot will not detect reaction additions on old messages when restarted.(Due to discord API limitations)\n
+**14. Ping the developer for help**
+```!giveaway dev```- Will ping the developer for help, use if bot is unresponsive or buggy\n
+**15. Help**
 ```!giveaway help```- This message\n
             """
     em = discord.Embed(colour=EM_COLOUR, description = msg)
