@@ -11,10 +11,11 @@ import read_write
 import datetime
 import secrets
 import sys
-
-PERMS = 0
+#TODO: giveaway delete fully deletes
+#TODO: countdown timer, fix time setting exception
+PERMS = 1
 EM_COLOUR = 15251015 
-EM_FOOTER = "To enter, react to the giveaway posting. Powered by Trade Central"  
+EM_FOOTER = "Powered by Trade Central :tc:"  
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -22,9 +23,8 @@ database = mysql.connector.connect(
     passwd = details.password,
     database = "tcgiveaway"
 )
-whitelist_roles = ["Server Owner","Community Manager","Admin"]
-whitelist_users = ["140204931528392705"]
-
+whitelist_roles = ["Server Owner","Community Manager","Admin","Developer"]
+whitelist_users = ["133491626680123392","140204931528392705","118531063285940227"]
 cursor = database.cursor()
 Timer = threading.Timer
 read_write.create_giveaway_tables()
@@ -34,14 +34,15 @@ retrieve_giveaway = read_write.retrieve_giveaway
 TOKEN = details.token
 client = discord.Client()
 
-async def update_messages(giveaway_id):
-    sql = "SELECT * FROM message_cache where giveaway_id=%s"
-    cursor.execute(sql,(giveaway_id, ))
+async def update_giveaways():
+    sql = "SELECT * FROM message_cache "
+    cursor.execute(sql)
     messages = cursor.fetchall()
     message_list = []
     for i in range(len(messages)):
         message_list.append(messages[i])
     for x in message_list:
+        giveaway_id = x[0]
         message_id = x[1]
         try:
             message = await client.get_message(client.get_channel(x[2]),x[1])
@@ -77,9 +78,11 @@ async def update_messages(giveaway_id):
         em.set_image(url=image)
         em.set_footer(text=EM_FOOTER)
         msg = line1 + line2 + line4 + line3
-        await client.edit_message(message,new_content=msg)
-        sql = "DELETE FROM message_cache WHERE message_id=%s"
-        cursor.execute(sql,(message_id, ))
+        try:
+            await client.edit_message(message,new_content=msg)
+        except:
+            donothing = 1
+            #yeah sorry this hurts me too
         database.commit()
     return
 
@@ -111,7 +114,7 @@ def start_timer(expiration_array):
         print("creating timer to expire in: "+ str(int(expiration_in_seconds)) + " seconds")
 
     return Timer(int(expiration_in_seconds), timer_done)
-
+donelist = []
 def giveaway_done(giveaway):
     giveaway.set_status("archived")
     giveaway.draw_winners(giveaway.get_number_of_winners())
@@ -190,13 +193,13 @@ async def switchME(message):
         server_roles  = server.roles
         global whitelist_roles
         global whitelist_users
-        author_roles = message.author.roles 
+        author_roles = message.author.roles
        #for i in range(len(server_roles)):
        #     print(str(i)+" "+ str(server_roles[i]))
         lethimthrough = 0
         for i in whitelist_roles:
             for x in author_roles:
-                if x == i or str(message.author.id) in whitelist_users:
+                if str(x) == str(i) or str(message.author.id) in whitelist_users:
                     lethimthrough=1
             if lethimthrough:
                 break
@@ -256,40 +259,36 @@ async def dev_message(message):
     return
 
 async def help_message(message):
-    msg ="""All giveaway commands start with !giveaway\n
-**1. Create a giveaway**
-```!giveaway add```- Creates a new giveaway, id will be given\n
-**2. Set End Date for a Giveaway (UTC 24h Format)**
-```!giveaway [giveaway_id] date [yyyy/mm/dd hh:mm]```- Sets the end date for the giveaway. Time MUST be in UTC and 24 hour clock\n
-**3. Get Present Date and Time**
-```!giveaway datenow```- Produces the current date in UTC\n
-**4. Set Giveaway Header**
-```!giveaway [giveaway_id] header <header>```- Set the header to desired statement\n
-**5. Set Giveaway Description**
-```!giveaway [giveaway_id] description```- Set the description to the desired statement\n
-**6. Set Giveaway Image**
-```!giveaway [giveaway_id] image [url]```- Set the giveaway embed image, takes http and https links. No gifs\n
-**7. Set the number of winners**
-```!giveaway [giveaway_id] winners [number of winners]```- Set how many people can win the giveaway\n
-**8. Redraw the Giveaway**
-```!giveaway [giveaway_id] redraw```- Redraws winners for the Giveaway, does not work until giveaway is complete or archived\n
-**9. Archive Giveaway**
-```!giveaway [giveaway_id] archive```- Marks the giveaway as complete\n
-**10. Delete Giveaway from Database**
-```!giveaway [giveaway_id] delete```- Deletes the giveaway permanently\n
-**11. Display or Preview a Giveaway**
-```!giveaway [giveaway_id] preview```- Preview the giveaway, can enter the giveaway by reacting to this message.\n
-**12. List all Giveaways**
-```!giveaway list [active/archived]```- Lists all completed or active giveaways depending on selection\n
-**13. Shutdown. **
-```!giveaway poweroff```- Will forcefully make the bot log off and shut down. Bot will not detect reaction additions on old messages when restarted.(Due to discord API limitations)\n
-**14. Ping the developer for help**
-```!giveaway dev```- Will ping the developer for help, use if bot is unresponsive or buggy\n
-**15. Help**
-```!giveaway help```- This message\n
+    msg ="""
+**1. Create Giveaway**
+`!giveaway add`\n-bot returns giveaway id
+**2. Archive/Delete Giveaway**
+`!giveaway [giveaway_id] [archive/delete]`\n-Marks the giveaway as complete
+**3. Timeframe**
+`!giveaway [giveaway_id] date [yyyy/mm/dd hh:mm]`\n-Timezone is UTC
+**4. Header**
+`!giveaway [giveaway_id] header <header>`
+**5. Description**
+`!giveaway [giveaway_id] description <description>`
+**6. Image**
+`!giveaway [giveaway_id] image [url]`\n- The image will appear after the description
+**7. Number of Winners**
+`!giveaway [giveaway_id] winners [number of winners]`
+**8. Preview Giveaway**
+`!giveaway [giveaway_id] preview`
+**9. Redraw Winners**
+`!giveaway [giveaway_id] redraw`\n-Does not work until giveaway is complete or archived
+**10. List Giveaways**
+`!giveaway list [active/archived]`\n-Lists preview of all active or archived giveaways
+**11.  Get Date and Time in UTC**
+`!giveaway datenow`
+**12. Shutdown. **
+`!giveaway poweroff`\n- forcefully shutdown the bot
+**13. Help**
+`!giveaway help` or `!giveaway`
             """
     em = discord.Embed(colour=EM_COLOUR, description = msg)
-    em.set_footer(text=EM_FOOTER)
+    em.set_footer(text="!giveaway dev to ping dev for help")
     
     await client.send_message(message.channel,embed=em)
     return
@@ -565,33 +564,17 @@ async def add_entrant(user, message):
     return
 
 donelist = []
-active = 0
 
-@client.event                 # This is how I got around not being able to mix threads with coroutines
-async def on_member_update(var1,var2): #checks a global variable for complete giveaways and then sends various pms
-    global active                       #activates whenenver a profile updates somehow.
+async def looping(): 
     global donelist
-    time.sleep(secrets.randbelow(1000)/100)#magic
-    if active == 0:
-        active = 1
-        if len(donelist) == 0:
-            active = 0
-            return
-        popvalues =[]
-        await update_messages(donelist[0].get_id())
-        for i in range(len(donelist)):
-            for j in range(len(donelist)):
-                if donelist[i] == donelist[j] and i!=j:
-                    popvalues.append(i)
-        for x in popvalues:
-            donelist.pop(x)
-        for i in range(len(donelist)):
-            await winner_pm(donelist[0])
-            time.sleep(1)
-            await loser_pm(donelist[0])
-            donelist.pop(0)
-            time.sleep(1)
-    active = 0
+    if(len(donelist) > 0):
+        x = donelist[0]
+        await winner_pm(x)
+        await loser_pm(x)
+        donelist.pop()
+    await update_giveaways()
+    await asyncio.sleep(15)
+    await looping()
     return
 
 @client.event
@@ -617,6 +600,7 @@ async def on_ready():
     print("Discord Version: " + discord.__version__)
     print('------')
     load_timers()
+    await looping()
 
 
 client.run(TOKEN)

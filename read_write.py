@@ -16,9 +16,10 @@ database = mysql.connector.connect(
 
 def entry_number(user_id):
     sql = "SELECT * FROM entry_multiplier WHERE entrant_id=%s"
-    cursor.execute(sql,(str(user_id), ))
+    print(str(user_id))
+    cursor.execute(sql,(str(user_id[0]), ))
     multy = cursor.fetchall()
-    if type(multy) != tuple:
+    if type(multy) != list:
         database.commit()
         return 1
     multiple = multy[0][1]
@@ -133,6 +134,7 @@ def create_giveaway_tables():
         print("created message cache")
     except Exception as e:
         print(e)
+    database.commit()
 def store_giveaway(giveaway):
     try:
         cursor.execute("SELECT giveaway_id FROM giveaways")
