@@ -64,9 +64,13 @@ async def update_giveaways():
         line2 = giveaway.get_description() + "\n"
         line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
         line4 = "Number of entrants: **" + str(len(giveaway.entrants))+"** \n"
-        if len(winning_users) == 0:
-            line3 = line3 + " Not Drawn \n"
-        else:
+        if len(winning_users) == 0 and giveaway.timeframe.end != "3000/01/01":
+            current_date = datetime.datetime.utcnow()
+            end_time_array = date_parser(giveaway.timeframe.end,giveaway.timeframe.endtime)
+            end_time = datetime.datetime(end_time_array[0],end_time_array[1],end_time_array[2],end_time_array[3],end_time_array[4], 0)
+            difference = (end_time-current_date)
+            line3 = "Time till drawing: " + str(difference.days) + " days " + str(int(difference.seconds/(60*60))) +" hours " + str(int((difference.seconds/(60))%60)) + " minutes"
+        elif giveaway.status == "archived":
             for i in winning_users:
                 user = await client.get_user_info(i[0])
                 userstring = user.mention
@@ -137,7 +141,7 @@ def date_parser(date, time): # yyyy/mm/dd hh:mm
     hour = time_array[0]
     minute = time_array[1]
 
-    return [year,month,day,hour,minute,0]
+    return [int(year),int(month),int(day),int(hour),int(minute),0]
 timerlist = [] 
 def load_timers():
     sql = "SELECT * FROM giveaways"
@@ -182,7 +186,8 @@ async def delete_giveaway(message):
         cursor.execute(sql)
         database.commit()
     await client.send_message(message.channel, "deleted giveaway "+ giveaway_id)
-
+    database.commit()
+    return
 async def switchME(message):
  
     if PERMS:
