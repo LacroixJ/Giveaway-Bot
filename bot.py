@@ -524,11 +524,13 @@ async def set_date(message):
 
     hour = time[0]
     minute = time[1]
-    
+    if(giveaway.status == "archived"):
+        await client.send_message(message.channel, "This giveaway has already been completed!")
+        return
     #print(year +" " + month + " " + day + " " + hour + " " +minute)
     timer = start_timer([int(year),int(month),int(day),int(hour),int(minute),0])
     if(type(timer) == str):
-        await client.send_message(message.channel, "Invalid time!")
+        await client.send_message(message.channel, "Invalid Time! Should be yyyy/mm/dd hh:mm and not located in the past")
         return
     timer.start()
 
