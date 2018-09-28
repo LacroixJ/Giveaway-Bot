@@ -15,7 +15,7 @@ import sys
 #TODO: countdown timer, fix time setting exception
 PERMS = 1
 EM_COLOUR = 15251015 
-EM_FOOTER = "Powered by Trade Central :tc:"  
+EM_FOOTER = "Powered by Trade Central, react at the posting to enter"  
 database = mysql.connector.connect(
     auth_plugin = "mysql_native_password",
     host = "localhost",
@@ -24,7 +24,7 @@ database = mysql.connector.connect(
     database = "tcgiveaway"
 )
 whitelist_roles = ["Server Owner","Community Manager","Admin","Developer"]
-whitelist_users = ["133491626680123392","140204931528392705","118531063285940227"]
+whitelist_users = ["140943459593748480","133491626680123392","140204931528392705","118531063285940227"]
 cursor = database.cursor()
 Timer = threading.Timer
 read_write.create_giveaway_tables()
@@ -430,7 +430,7 @@ async def winner_pm(giveaway):
         line3 = "A Community Manager will contact you shortly.\n"
         date = date_parser(giveaway.timeframe.end, giveaway.timeframe.endtime)
         date[2] = str(int(date[2]) + 7)
-        line4 = "You will have until "+ date[0]+"/"+date[1]+"/"+date[2]  +" to collect your prize.\n"
+        line4 = "You will have until "+ str(date[0])+"/"+str(date[1])+"/"+str(date[2])  +" to collect your prize.\n"
         em = discord.Embed(colour=EM_COLOUR)    
         em.set_image(url=giveaway.get_image())
         em.set_footer(text=EM_FOOTER)
@@ -578,7 +578,7 @@ async def looping():
         await loser_pm(x)
         donelist.pop()
     await update_giveaways()
-    await asyncio.sleep(15)
+    await asyncio.sleep(55)
     await looping()
     return
 

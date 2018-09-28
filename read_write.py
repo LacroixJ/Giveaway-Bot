@@ -16,11 +16,9 @@ database = mysql.connector.connect(
 
 def entry_number(user_id):
     sql = "SELECT * FROM entry_multiplier WHERE entrant_id=%s"
-    print(str(user_id))
     cursor.execute(sql,(str(user_id[0]), ))
     multy = cursor.fetchall()
-    if type(multy) != list:
-        database.commit()
+    if len(multy) == 0:
         return 1
     multiple = multy[0][1]
     database.commit()
