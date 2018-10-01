@@ -11,6 +11,7 @@ import read_write
 import datetime
 import sys
 PERMS = 1
+ENTRY_TOKEN = 'TCspin'
 EM_COLOUR = 15251015
 EM_FOOTER = "Powered by Trade Central, react at the posting to enter"
 database = mysql.connector.connect(
@@ -294,7 +295,7 @@ async def help_message(message):
 **13. Help**
 `!giveaway help` or `!giveaway`
             """
-    em = discord.Embed(colour=EM_COLOUR, title=msg)
+    em = discord.Embed(colour=EM_COLOUR, description=msg)
     em.set_footer(text="!giveaway dev to ping dev for help")
 
     await client.send_message(message.channel, embed=em)
@@ -355,7 +356,7 @@ async def preview_giveaway(message, listmode=0):
             user = await client.get_user_info(i[0])
             userstring = user.mention
             line3 = line3 + userstring + " "
-        line3 = line3 + "**|** Congratulations! Winners will recieve a DM \n"
+        line3 = line3 + "**|** Congratulations!\n"
 
     msg = line2 + line4 + line3
     em = discord.Embed(colour=EM_COLOUR, title=line1, description=msg)
@@ -368,6 +369,11 @@ async def preview_giveaway(message, listmode=0):
     values = (giveaway_id, message_to_cache.id, message_to_cache.channel.id)
     cursor.execute(sql, values)
     database.commit()
+    # for x in client.get_all_emojis():
+    #     print(str(x))
+    emoji = discord.utils.get(client.get_all_emojis(), name=ENTRY_TOKEN)
+    # print(str(emoji))
+    await client.add_reaction(message_to_cache, emoji)
     return
 async def print_current_time(message):
     msg = datetime.datetime.utcnow()
