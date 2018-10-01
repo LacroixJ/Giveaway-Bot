@@ -4,13 +4,13 @@ import mysql.connector
 import secrets
 import asyncio
 import read_write
-
+import config as details
 database = mysql.connector.connect(
     auth_plugin="mysql_native_password",
-    host="localhost",
-    user="TC",
-    passwd="tcbotpass",
-    database="tcgiveaway")
+    host=details.hostname,
+    user=details.username,
+    passwd=details.password,
+    database=details.database)
 cursor = database.cursor()
 
 

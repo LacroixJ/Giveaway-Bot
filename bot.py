@@ -21,8 +21,8 @@ database = mysql.connector.connect(
     passwd=details.password,
     database=details.database)
 
-whitelist_roles = ["Server Owner", "Community Manager", "Admin", "Developer"]
-whitelist_users = ["140943459593748480", "133491626680123392", "140204931528392705", "118531063285940227"]
+whitelist_roles = details.whitelist_roles
+whitelist_users = details.whitelist_users
 cursor = database.cursor()
 Timer = threading.Timer
 read_write.create_giveaway_tables()
