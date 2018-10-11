@@ -11,9 +11,10 @@ import read_write
 import datetime
 import sys
 PERMS = 1
-ENTRY_TOKEN = 'TCspin'
-EM_COLOUR = 15251015
-EM_FOOTER = "Powered by Trade Central, react at the posting to enter"
+ENTRY_TOKEN = details.ENTRY_TOKEN
+EM_COLOUR = details.EM_COLOUR
+EM_FOOTER = details.EM_FOOTER
+
 database = mysql.connector.connect(
     auth_plugin="mysql_native_password",
     host=details.hostname,
@@ -55,9 +56,9 @@ async def update_giveaways():
             liveswitch = "\** LIVE \**"
         else:
             liveswitch = "\** COMPLETE \**"
-        line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** start-"+giveaway.timeframe.start)
-        line1_2 = str(" end-" + giveaway.timeframe.end + " --"+giveaway.get_status()+"--"+" **\n" + giveaway.get_header()+"**\n"+liveswitch+"\n")
-        line1 = line1_1 + line1_2
+        line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** " + liveswitch + " | "+giveaway.get_header())
+        #  line1_2 = str(" end-" + giveaway.timeframe.end + " --"+giveaway.get_status()+"--"+" **\n" + giveaway.get_header()+"**\n"+liveswitch+"\n")
+        line1 = line1_1   # + line1_2
         line2 = giveaway.get_description() + "\n"
         line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
         line4 = "Number of entrants: **" + str(len(giveaway.entrants))+"** \n"
@@ -343,9 +344,9 @@ async def preview_giveaway(message, listmode=0):
         liveswitch = "\** LIVE \**"
     else:
         liveswitch = "\** COMPLETE \**"
-    line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** start-"+giveaway.timeframe.start)
-    line1_2 = str(" end-" + giveaway.timeframe.end + " --"+giveaway.get_status()+"--"+" **|\n" + giveaway.get_header()+"**\n"+liveswitch+"\n")
-    line1 = line1_1 + line1_2
+    line1_1 = str("**Giveaway #"+giveaway.get_id()+" |** " + liveswitch + " | "+giveaway.get_header())
+    #  line1_2 = str(" end-" + giveaway.timeframe.end + " --"+giveaway.get_status()+"--"+" **\n" + giveaway.get_header()+"**\n"+liveswitch+"\n")
+    line1 = line1_1  # + line1_2
     line2 = giveaway.get_description() + "\n"
     line3 = "**Winners("+giveaway.get_number_of_winners()+"):**"
     line4 = "Number of entrants: **" + str(len(giveaway.entrants))+"** \n"
@@ -381,7 +382,7 @@ async def print_current_time(message):
     return
 async def enter_pm(user_id, giveaway):
     line1 = "You have been entered for giveaway " + giveaway.get_id() + "\n"
-    line2 = "Description: " + giveaway.get_description() + "\n"
+    line2 = giveaway.get_description() + "\n"
     line3 = "End date: " + giveaway.timeframe.end + "\n"
     line4 = "If you win, you will be notified by the bot and a TC staff member. Good luck! \n"
 
@@ -596,6 +597,7 @@ async def looping():
         donelist.pop()
     await update_giveaways()
     await asyncio.sleep(55)
+    #  print("did a loop")
     await looping()
     return
 
