@@ -1,4 +1,4 @@
 # Giveaway-Bot
-Discord Giveaway Bot
+Discord Giveaway Bot Used on my personal server
 _________________________________________________________________________________
-Discontinued
+Fully functional but discontinued
